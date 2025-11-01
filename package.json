@@ -1,0 +1,20 @@
+﻿{
+  "name": "devsecops-demo",
+  "version": "1.0.0",
+  "description": "Demo DevSecOps con Jenkins",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "jest --coverage"
+  },
+  "keywords": ["devsecops", "jenkins", "docker"],
+  "author": "Tu Nombre",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "supertest": "^6.3.3"
+  }
+}
