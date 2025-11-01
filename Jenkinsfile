@@ -18,7 +18,7 @@ pipeline {
             steps {
                 echo '🔨 Construyendo la aplicación...'
                 script {
-                    bat 'npm install'
+                    sh 'npm install'
                 }
             }
         }
@@ -27,7 +27,7 @@ pipeline {
             steps {
                 echo '🧪 Ejecutando pruebas unitarias...'
                 script {
-                    bat 'npm test'
+                    sh 'npm test'
                 }
             }
         }
@@ -36,7 +36,7 @@ pipeline {
             steps {
                 echo '🔒 Analizando dependencias vulnerables...'
                 script {
-                    bat 'npm audit --production || exit 0'
+                    sh 'npm audit --production || true'
                 }
             }
         }
@@ -54,8 +54,8 @@ pipeline {
             steps {
                 echo '🐳 Construyendo imagen Docker...'
                 script {
-                    bat "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-                    bat "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
+                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                    sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
                 }
             }
         }
@@ -64,7 +64,7 @@ pipeline {
             steps {
                 echo '🛡️ Escaneando imagen Docker...'
                 script {
-                    bat "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${DOCKER_TAG} || exit 0"
+                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${DOCKER_TAG} || true"
                 }
             }
         }
@@ -73,9 +73,9 @@ pipeline {
             steps {
                 echo '🚀 Desplegando aplicación...'
                 script {
-                    bat 'docker stop devsecops-app || exit 0'
-                    bat 'docker rm devsecops-app || exit 0'
-                    bat "docker run -d --name devsecops-app -p 3000:3000 ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                    sh 'docker stop devsecops-app || true'
+                    sh 'docker rm devsecops-app || true'
+                    sh "docker run -d --name devsecops-app -p 3000:3000 ${DOCKER_IMAGE}:${DOCKER_TAG}"
                 }
             }
         }
@@ -85,7 +85,7 @@ pipeline {
                 echo '❤️ Verificando salud de la aplicación...'
                 script {
                     sleep 5
-                    bat 'curl http://localhost:3000/health || exit 0'
+                    sh 'curl http://host.docker.internal:3000/health || true'
                 }
             }
         }
