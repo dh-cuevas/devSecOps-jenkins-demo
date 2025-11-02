@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "devsecops-demo",
   "version": "1.0.0",
   "description": "Demo DevSecOps con Jenkins",
@@ -8,7 +8,7 @@
     "test": "jest --coverage"
   },
   "keywords": ["devsecops", "jenkins", "docker"],
-  "author": "Tu Nombre",
+  "author": "David Cuevas",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2"
