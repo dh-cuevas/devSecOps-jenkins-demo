@@ -1,4 +1,4 @@
-﻿const request = require('supertest');
+const request = require('supertest');
 const { app, server } = require('./app');
 
 describe('App Tests', () => {
