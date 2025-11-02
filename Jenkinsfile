@@ -14,19 +14,31 @@ pipeline {
             }
         }
         
-        stage('Info') {
+        stage('Build & Test') {
+            agent {
+                docker { 
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            }
             steps {
-                echo '=== Project Information ==='
-                sh 'ls -la'
-                sh 'cat package.json'
+                echo '=== Building Application ==='
+                sh 'npm install'
+                sh 'npm test'
             }
         }
         
-        stage('Security Scan - Manual') {
+        stage('Security Scan - Dependencies') {
+            agent {
+                docker { 
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            }
             steps {
-                echo '=== Security Analysis ==='
-                echo 'Verificando Dockerfile para mejores practicas'
-                sh 'cat Dockerfile'
+                echo '=== Security: npm audit ==='
+                sh 'npm install'
+                sh 'npm audit --production || true'
             }
         }
         
@@ -35,37 +47,50 @@ pipeline {
                 echo '=== Building Docker Image ==='
                 sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
                 sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
-                echo "Imagen creada: ${DOCKER_IMAGE}:${DOCKER_TAG}"
+            }
+        }
+        
+        stage('Security Scan - Container') {
+            steps {
+                echo '=== Security: Trivy scan ==='
+                sh """
+                    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                    aquasec/trivy:latest image \
+                    --severity HIGH,CRITICAL \
+                    ${DOCKER_IMAGE}:${DOCKER_TAG} || true
+                """
             }
         }
         
         stage('Deploy') {
             steps {
                 echo '=== Deploying Application ==='
-                sh 'docker stop devsecops-app 2>/dev/null || true'
-                sh 'docker rm devsecops-app 2>/dev/null || true'
+                sh 'docker stop devsecops-app || true'
+                sh 'docker rm devsecops-app || true'
                 sh "docker run -d --name devsecops-app -p 3000:3000 ${DOCKER_IMAGE}:${DOCKER_TAG}"
-                sleep 5
             }
         }
         
-        stage('Verify') {
+        stage('Health Check') {
             steps {
-                echo '=== Verification ==='
-                sh 'docker ps | grep devsecops-app || echo "Container running"'
-                echo '✅ Aplicacion desplegada en: http://localhost:3000'
+                echo '=== Health Check ==='
+                sleep 10
+                sh 'docker exec devsecops-app wget -q -O- http://localhost:3000/health || true'
+                echo '✅ App corriendo en: http://localhost:3000'
             }
         }
     }
     
     post {
         success {
-            echo '✅ ¡PIPELINE EXITOSO!'
-            echo "📦 Imagen: ${DOCKER_IMAGE}:${DOCKER_TAG}"
-            echo '🌐 App: http://localhost:3000'
+            echo '================================'
+            echo '✅ PIPELINE SUCCESS!'
+            echo '================================'
+            echo "Imagen: ${DOCKER_IMAGE}:${DOCKER_TAG}"
+            echo 'App: http://localhost:3000'
         }
         failure {
-            echo '❌ Pipeline falló'
+            echo '❌ Pipeline failed'
         }
     }
 }
